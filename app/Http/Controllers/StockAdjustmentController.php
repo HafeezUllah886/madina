@@ -1,2 +1,124 @@
 <?php
- namespace App\Http\Controllers; use App\Models\products; use App\Models\stock; use App\Models\stockAdjustment; use App\Models\units; use Illuminate\Http\Request; use Illuminate\Support\Facades\DB; class StockAdjustmentController extends Controller { public function index() { $adjustments = stockAdjustment::orderBy("\x69\144", "\144\x65\x73\143")->get(); $products = products::all(); $units = units::all(); return view("\163\164\x6f\x63\x6b\x2e\x61\x64\152\165\x73\164\x6d\x65\156\164\x2e\151\x6e\x64\x65\x78", compact("\x61\x64\x6a\x75\163\x74\155\x65\x6e\x74\163", "\160\162\x6f\x64\x75\143\164\163", "\x75\x6e\x69\164\x73")); } public function create() { } public function store(Request $request) { try { DB::beginTransaction(); $ref = getRef(); $unit = units::find($request->unitID); $qty = $request->qty * $unit->value; stockAdjustment::create(array("\x70\x72\x6f\144\x75\x63\x74\x49\x44" => $request->productID, "\x75\x6e\151\x74\x49\x44" => $request->unitID, "\165\156\151\164\x56\x61\x6c\165\x65" => $unit->value, "\144\x61\164\145" => $request->date, "\164\171\160\x65" => $request->type, "\x71\x74\x79" => $request->qty, "\156\157\x74\x65\163" => $request->notes, "\x72\x65\146\x49\104" => $ref)); if ($request->type == "\x53\164\x6f\x63\x6b\x2d\x49\156") { createStock($request->productID, $qty, 0, $request->date, "\x53\164\157\x63\x6b\x2d\x49\x6e\x3a\40{$request->notes}", $ref); } else { createStock($request->productID, 0, $qty, $request->date, "\x53\164\157\143\153\55\117\165\164\x3a\40{$request->notes}", $ref); } DB::commit(); return back()->with("\163\165\143\143\145\x73\x73", "\123\164\x6f\143\x6b\40\101\144\152\x75\x73\x74\155\145\x6e\x74\x20\103\x72\x65\x61\x74\145\x64"); } catch (\Exception $e) { DB::rollBack(); return back()->with("\x65\162\x72\157\x72", $e->getMessage()); } } public function show(stockAdjustment $stockAdjustment) { } public function edit(stockAdjustment $stockAdjustment) { } public function update(Request $request, stockAdjustment $stockAdjustment) { } public function destroy($ref) { try { DB::beginTransaction(); stockAdjustment::where("\x72\x65\x66\x49\104", $ref)->delete(); stock::where("\x72\145\x66\x49\x44", $ref)->delete(); DB::commit(); session()->forget("\143\157\x6e\x66\151\162\x6d\x65\144\137\x70\141\163\163\x77\157\162\144"); return redirect()->route("\x73\164\x6f\143\x6b\101\144\x6a\165\163\164\x6d\145\156\164\x73\56\151\156\144\145\170")->with("\x73\165\143\x63\145\163\x73", "\x53\x74\157\143\x6b\40\x41\144\x6a\165\163\x74\155\145\156\x74\40\104\145\154\145\164\145\144"); } catch (\Exception $e) { DB::rollBack(); session()->forget("\143\x6f\x6e\x66\x69\x72\155\x65\144\137\x70\141\163\x73\x77\x6f\162\144"); return redirect()->route("\163\164\157\x63\x6b\101\x64\152\165\x73\x74\155\x65\156\x74\163\56\x69\156\144\x65\x78")->with("\145\x72\162\157\x72", $e->getMessage()); } } }
+
+namespace App\Http\Controllers;
+
+use App\Models\products;
+use App\Models\stock;
+use App\Models\stockAdjustment;
+use App\Models\units;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
+class StockAdjustmentController extends Controller
+{
+    /**
+     * Display a listing of the resource.
+     */
+    public function index()
+    {
+        $adjustments = stockAdjustment::orderBy('id', 'desc')->get();
+        $products = products::all();
+        $units = units::all();
+
+        return view('stock.adjustment.index', compact('adjustments', 'products', 'units'));
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     */
+    public function create()
+    {
+        //
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(Request $request)
+    {
+
+        try
+        {
+            DB::beginTransaction();
+            $ref = getRef();
+            $unit = units::find($request->unitID);
+            $qty = $request->qty * $unit->value;
+            stockAdjustment::create(
+                [
+                    'productID' => $request->productID,
+                    'unitID'    => $request->unitID,
+                    'unitValue' => $unit->value,
+                    'date'      => $request->date,
+                    'type'      => $request->type,
+                    'qty'       => $request->qty,
+                    'notes'     => $request->notes,
+                    'refID'     => $ref
+                ]
+            );
+
+            if($request->type == 'Stock-In')
+            {
+               createStock($request->productID, $qty, 0, $request->date, "Stock-In: $request->notes", $ref);
+            }
+            else
+            {
+                createStock($request->productID, 0, $qty, $request->date, "Stock-Out: $request->notes", $ref);
+            }
+
+            DB::commit();
+            return back()->with('success', "Stock Adjustment Created");
+        }
+        catch(\Exception $e)
+        {
+            DB::rollBack();
+
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(stockAdjustment $stockAdjustment)
+    {
+        //
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(stockAdjustment $stockAdjustment)
+    {
+        //
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, stockAdjustment $stockAdjustment)
+    {
+        //
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy($ref)
+    {
+        try
+        {
+            DB::beginTransaction();
+            stockAdjustment::where('refID', $ref)->delete();
+            stock::where('refID', $ref)->delete();
+            DB::commit();
+            session()->forget('confirmed_password');
+            return redirect()->route('stockAdjustments.index')->with('success', "Stock Adjustment Deleted");
+        }
+        catch(\Exception $e)
+        {
+            DB::rollBack();
+            session()->forget('confirmed_password');
+            return redirect()->route('stockAdjustments.index')->with('error', $e->getMessage());
+        }
+    }
+}

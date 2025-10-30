@@ -1,2 +1,348 @@
 <?php
- namespace App\Http\Controllers; use App\Models\accounts; use App\Models\products; use App\Models\purchase; use App\Models\purchase_details; use App\Models\purchase_payments; use App\Models\stock; use App\Models\transactions; use App\Models\units; use Exception; use Illuminate\Http\Request; use Illuminate\Support\Facades\DB; class PurchaseController extends Controller { public function index(Request $request) { $start = $request->start ?? now()->toDateString(); $end = $request->end ?? now()->toDateString(); $purchases = purchase::with("\160\141\171\x6d\x65\x6e\164\x73")->whereBetween("\x64\141\164\x65", array($start, $end))->orderby("\x69\x64", "\x64\x65\x73\x63")->get(); return view("\x70\x75\x72\143\x68\x61\x73\x65\56\x69\x6e\x64\145\170", compact("\160\x75\162\x63\150\x61\x73\x65\x73", "\x73\x74\x61\x72\164", "\145\156\144")); } public function create() { $products = products::orderby("\x6e\141\x6d\145", "\x61\x73\143")->get(); $units = units::all(); $vendors = accounts::vendor()->get(); $accounts = accounts::business()->get(); return view("\160\165\162\x63\x68\x61\163\x65\x2e\143\x72\x65\x61\164\145", compact("\x70\162\x6f\x64\165\143\164\163", "\165\156\151\x74\x73", "\x76\145\x6e\x64\157\162\163", "\141\x63\143\157\x75\x6e\164\x73")); } public function store(Request $request) { try { if ($request->isNotFilled("\151\x64")) { throw new Exception("\120\154\x65\x61\x73\145\x20\x53\145\154\145\143\x74\40\x41\164\154\x65\x61\x73\x74\x20\117\x6e\145\x20\120\162\x6f\144\x75\143\x74"); } DB::beginTransaction(); $ref = getRef(); $purchase = purchase::create(array("\166\145\x6e\144\157\x72\x49\104" => $request->vendorID, "\144\141\x74\x65" => $request->date, "\156\x6f\164\x65\x73" => $request->notes, "\x64\151\163\x63\157\x75\156\x74" => $request->discount, "\146\162\x69\147\x68\x74" => $request->fright, "\146\162\x69\147\x68\164\x31" => $request->fright1, "\x77\x68" => $request->whTax, "\x69\156\166" => $request->inv, "\x72\145\x66\111\104" => $ref)); $ids = $request->id; $total = 0; foreach ($ids as $key => $id) { $unit = units::find($request->unit[$key]); $qty = $request->qty[$key] * $unit->value + $request->bonus[$key]; $qty1 = $request->qty[$key] * $unit->value; $pprice = $request->pprice[$key]; $price = $request->price[$key]; $wsprice = $request->wsprice[$key]; $tp = $request->tp[$key]; $amount = $pprice * $qty1; $total += $amount; purchase_details::create(array("\160\x75\162\x63\150\x61\x73\x65\111\104" => $purchase->id, "\160\162\157\x64\165\x63\164\x49\104" => $id, "\160\160\x72\151\143\145" => $pprice, "\x70\162\x69\x63\145" => $price, "\x77\x73\x70\x72\151\143\145" => $wsprice, "\164\x70" => $tp, "\x71\x74\x79" => $qty1, "\x67\x73\164\x56\141\x6c\165\145" => $request->gstValue[$key], "\x61\x6d\157\165\156\164" => $amount, "\144\x61\x74\145" => $request->date, "\x62\157\x6e\x75\163" => $request->bonus[$key], "\x75\x6e\x69\x74\x49\x44" => $unit->id, "\x75\x6e\151\164\x56\x61\154\x75\145" => $unit->value, "\x72\145\x66\x49\x44" => $ref)); createStock($id, $qty, 0, $request->date, "\120\x75\162\143\150\x61\163\145\144", $ref); $product = products::find($id); $product->update(array("\160\160\162\x69\143\145" => $pprice, "\x70\x72\151\x63\x65" => $price, "\167\x73\x70\x72\151\143\x65" => $wsprice)); } $whTax = $total * $request->whTax / 100; $net = $total + $whTax + $request->fright1 - ($request->discount + $request->fright); $purchase->update(array("\167\x68\x56\x61\x6c\165\145" => $whTax, "\x6e\x65\x74" => $net)); if ($request->status == "\160\x61\x69\x64") { purchase_payments::create(array("\x70\x75\162\x63\x68\141\163\x65\111\x44" => $purchase->id, "\141\x63\x63\157\x75\156\x74\x49\104" => $request->accountID, "\144\141\x74\x65" => $request->date, "\x61\x6d\157\x75\x6e\x74" => $net, "\x6e\157\x74\x65\x73" => "\106\165\x6c\154\40\120\141\151\x64", "\x72\145\x66\111\104" => $ref)); createTransaction($request->accountID, $request->date, 0, $net, "\x50\141\x79\155\x65\x6e\164\x20\157\146\x20\x50\165\162\143\x68\141\x73\x65\x20\x4e\x6f\x2e\40{$purchase->id}", $ref); } else { createTransaction($request->vendorID, $request->date, 0, $net, "\120\145\156\144\151\x6e\147\x20\x41\155\x6f\x75\156\x74\40\x6f\x66\x20\x50\165\x72\x63\x68\141\163\x65\x20\116\157\56\40{$purchase->id}", $ref); } DB::commit(); return back()->with("\163\x75\x63\143\x65\163\163", "\x50\x75\162\x63\150\x61\163\x65\x20\x43\x72\145\141\x74\145\x64"); } catch (\Exception $e) { DB::rollback(); return back()->with("\145\162\162\x6f\x72", $e->getMessage()); } } public function show(purchase $purchase) { return view("\160\x75\x72\143\150\x61\x73\x65\x2e\x76\151\x65\167", compact("\x70\165\162\x63\x68\141\x73\x65")); } public function edit(purchase $purchase) { $products = products::orderby("\156\141\155\145", "\x61\x73\143")->get(); $units = units::all(); $vendors = accounts::vendor()->get(); $accounts = accounts::business()->get(); return view("\x70\165\x72\x63\150\x61\x73\145\x2e\145\144\151\x74", compact("\x70\162\x6f\x64\165\x63\x74\163", "\165\156\x69\x74\163", "\166\x65\x6e\144\157\x72\163", "\141\143\x63\157\165\x6e\x74\x73", "\x70\x75\162\143\x68\141\x73\145")); } public function update(Request $request, purchase $purchase) { try { if ($request->isNotFilled("\x69\144")) { throw new Exception("\x50\x6c\145\x61\163\x65\40\123\x65\154\x65\143\164\x20\x41\164\154\x65\141\163\164\40\x4f\x6e\145\40\120\162\157\x64\x75\143\x74"); } DB::beginTransaction(); foreach ($purchase->payments as $payment) { transactions::where("\162\x65\146\111\x44", $payment->refID)->delete(); $payment->delete(); } foreach ($purchase->details as $product) { stock::where("\x72\145\146\111\104", $product->refID)->delete(); $product->delete(); } transactions::where("\162\x65\146\111\x44", $purchase->refID)->delete(); $purchase->update(array("\x76\x65\x6e\x64\x6f\162\111\104" => $request->vendorID, "\144\141\164\145" => $request->date, "\x6e\157\164\x65\x73" => $request->notes, "\x64\151\163\x63\157\x75\x6e\164" => $request->discount, "\x66\x72\x69\147\150\164" => $request->fright, "\146\162\x69\x67\x68\164\61" => $request->fright1, "\x77\x68" => $request->whTax, "\x69\x6e\x76" => $request->inv)); $ids = $request->id; $total = 0; $ref = $purchase->refID; dashboard(); foreach ($ids as $key => $id) { $unit = units::find($request->unit[$key]); $qty = $request->qty[$key] * $unit->value + $request->bonus[$key]; $qty1 = $request->qty[$key] * $unit->value; $pprice = $request->pprice[$key]; $price = $request->price[$key]; $wsprice = $request->wsprice[$key]; $tp = $request->tp[$key]; $amount = $pprice * $qty1; $total += $amount; purchase_details::create(array("\160\x75\x72\x63\x68\x61\x73\x65\111\104" => $purchase->id, "\160\x72\157\144\165\143\x74\x49\104" => $id, "\x70\160\x72\x69\x63\x65" => $pprice, "\x70\x72\151\143\x65" => $price, "\x77\x73\160\x72\x69\x63\x65" => $wsprice, "\x74\160" => $tp, "\x71\x74\x79" => $qty1, "\147\163\x74\x56\x61\x6c\165\145" => $request->gstValue[$key], "\141\x6d\x6f\x75\156\164" => $amount, "\144\141\164\x65" => $request->date, "\x62\x6f\156\x75\x73" => $request->bonus[$key], "\165\x6e\151\164\x49\x44" => $unit->id, "\x75\156\x69\x74\x56\141\x6c\x75\x65" => $unit->value, "\x72\145\146\111\x44" => $ref)); createStock($id, $qty, 0, $request->date, "\120\x75\x72\143\x68\141\163\x65\x64", $ref); $product = products::find($id); $product->update(array("\x70\x70\x72\151\143\145" => $pprice, "\160\x72\x69\x63\145" => $price, "\167\x73\160\x72\151\143\x65" => $wsprice)); } $whTax = $total * $request->whTax / 100; $net = $total + $whTax + $request->fright1 - ($request->discount + $request->fright); $purchase->update(array("\167\150\126\141\x6c\x75\145" => $whTax, "\x6e\145\164" => $net)); if ($request->status == "\160\141\151\x64") { purchase_payments::create(array("\x70\165\162\143\x68\x61\163\145\x49\x44" => $purchase->id, "\141\143\x63\x6f\165\156\164\x49\x44" => $request->accountID, "\x64\x61\164\x65" => $request->date, "\x61\155\157\x75\156\x74" => $net, "\x6e\157\x74\x65\x73" => "\106\165\x6c\x6c\40\x50\141\x69\144", "\x72\145\x66\x49\x44" => $ref)); createTransaction($request->accountID, $request->date, 0, $net, "\x50\x61\171\155\145\156\164\x20\157\146\40\x50\165\x72\x63\150\141\163\x65\40\116\157\56\40{$purchase->id}", $ref); } else { createTransaction($request->vendorID, $request->date, 0, $net, "\120\145\156\x64\x69\x6e\147\x20\x41\155\157\x75\156\x74\x20\x6f\146\40\120\165\x72\143\x68\141\x73\145\40\x4e\x6f\x2e\x20{$purchase->id}", $ref); } DB::commit(); return back()->with("\x73\165\x63\x63\x65\163\x73", "\120\x75\x72\x63\150\x61\x73\145\x20\125\x70\144\x61\164\x65\x64"); } catch (\Exception $e) { DB::rollback(); return back()->with("\x65\x72\x72\157\x72", $e->getMessage()); } } public function destroy($id) { try { DB::beginTransaction(); $purchase = purchase::find($id); foreach ($purchase->payments as $payment) { transactions::where("\x72\x65\x66\111\x44", $payment->refID)->delete(); $payment->delete(); } foreach ($purchase->details as $product) { stock::where("\x72\145\x66\x49\104", $product->refID)->delete(); $product->delete(); } transactions::where("\x72\x65\x66\x49\104", $purchase->refID)->delete(); $purchase->delete(); DB::commit(); session()->forget("\143\x6f\156\x66\151\162\155\x65\x64\x5f\160\141\163\x73\167\157\x72\x64"); return redirect()->route("\x70\165\x72\x63\150\x61\x73\x65\56\151\156\x64\x65\170")->with("\x73\165\x63\143\145\163\163", "\x50\x75\x72\143\x68\141\163\145\40\x44\145\x6c\145\x74\145\144"); } catch (\Exception $e) { DB::rollBack(); session()->forget("\x63\157\x6e\146\151\x72\155\145\144\x5f\160\x61\163\x73\x77\157\x72\x64"); return redirect()->route("\160\x75\162\x63\150\x61\x73\x65\56\151\x6e\x64\145\170")->with("\x65\162\162\x6f\x72", $e->getMessage()); } } public function getSignleProduct($id) { $product = products::find($id); return $product; } }
+
+namespace App\Http\Controllers;
+
+use App\Models\accounts;
+use App\Models\products;
+use App\Models\purchase;
+use App\Models\purchase_details;
+use App\Models\purchase_payments;
+use App\Models\stock;
+use App\Models\transactions;
+use App\Models\units;
+use Exception;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
+class PurchaseController extends Controller
+{
+    /**
+     * Display a listing of the resource.
+     */
+    public function index(Request $request)
+    {
+        $start = $request->start ?? now()->toDateString();
+        $end = $request->end ?? now()->toDateString();
+
+        $purchases = purchase::with('payments')->whereBetween("date", [$start, $end])->orderby('id', 'desc')->get();
+        return view('purchase.index', compact('purchases', 'start', 'end'));
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     */
+    public function create()
+    {
+        $products = products::orderby('name', 'asc')->get();
+        $units = units::all();
+        $vendors = accounts::vendor()->get();
+        $accounts = accounts::business()->get();
+        return view('purchase.create', compact('products', 'units', 'vendors', 'accounts'));
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(Request $request)
+    {
+
+        try
+        {
+            if($request->isNotFilled('id'))
+            {
+                throw new Exception('Please Select Atleast One Product');
+            }
+            DB::beginTransaction();
+            $ref = getRef();
+            $purchase = purchase::create(
+                [
+                  'vendorID'        => $request->vendorID,
+                  'date'            => $request->date,
+                  'notes'           => $request->notes,
+                  'discount'        => $request->discount,
+                  'fright'          => $request->fright,
+                  'fright1'          => $request->fright1,
+                  'wh'              => $request->whTax,
+                  'inv'             => $request->inv,
+                  'refID'           => $ref,
+                ]
+            );
+
+            $ids = $request->id;
+
+            $total = 0;
+            foreach($ids as $key => $id)
+            {
+                $unit = units::find($request->unit[$key]);
+                $qty = ($request->qty[$key] * $unit->value) + $request->bonus[$key];
+                $qty1 = $request->qty[$key] * $unit->value;
+                $pprice = $request->pprice[$key] ;
+                $price = $request->price[$key];
+                $wsprice = $request->wsprice[$key];
+                $tp = $request->tp[$key];
+                $amount = $pprice * $qty1;
+                $total += $amount;
+
+                purchase_details::create(
+                    [
+                        'purchaseID'    => $purchase->id,
+                        'productID'     => $id,
+                        'gprice'        => $request->gprice[$key],
+                        'cost'          => $request->cost[$key],
+                        'pprice'        => $pprice,
+                        'price'         => $price,
+                        'wsprice'       => $wsprice,
+                        'tp'            => $tp,
+                        'qty'           => $qty1,
+                        'gstValue'      => $request->gstValue[$key],
+                        'amount'        => $amount,
+                        'date'          => $request->date,
+                        'bonus'         => $request->bonus[$key],
+                        'unitID'        => $unit->id,
+                        'unitValue'     => $unit->value,
+                        'refID'         => $ref,
+                    ]
+                );
+                createStock($id, $qty, 0, $request->date, "Purchased", $ref);
+
+                $product = products::find($id);
+                $product->update(
+                    [
+                        'pprice' => $pprice,
+                        'price'  => $price,
+                        'wsprice' => $wsprice,
+                    ]
+                );
+            }
+
+            $whTax = $total * $request->whTax / 100;
+
+            $net = ($total + $whTax + $request->fright1) - ($request->discount + $request->fright);
+
+            $purchase->update(
+                [
+
+                    'whValue'   => $whTax,
+                    'net'       => $net,
+                ]
+            );
+
+            if($request->status == 'paid')
+            {
+                purchase_payments::create(
+                    [
+                        'purchaseID'    => $purchase->id,
+                        'accountID'     => $request->accountID,
+                        'date'          => $request->date,
+                        'amount'        => $net,
+                        'notes'         => "Full Paid",
+                        'refID'         => $ref,
+                    ]
+                );
+
+                createTransaction($request->accountID, $request->date, 0, $net, "Payment of Purchase No. $purchase->id", $ref);
+            }
+            else
+            {
+                createTransaction($request->vendorID, $request->date, 0, $net, "Pending Amount of Purchase No. $purchase->id", $ref);
+
+            }
+            DB::commit();
+            return back()->with('success', "Purchase Created");
+
+        }
+        catch(\Exception $e)
+        {
+            DB::rollback();
+            return back()->with('error', $e->getMessage());
+        }
+
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(purchase $purchase)
+    {
+        return view('purchase.view', compact('purchase'));
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(purchase $purchase)
+    {
+        $products = products::orderby('name', 'asc')->get();
+        $units = units::all();
+        $vendors = accounts::vendor()->get();
+        $accounts = accounts::business()->get();
+        return view('purchase.edit', compact('products', 'units', 'vendors', 'accounts', 'purchase'));
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, purchase $purchase)
+    {
+        try
+        {
+            if($request->isNotFilled('id'))
+            {
+                throw new Exception('Please Select Atleast One Product');
+            }
+            DB::beginTransaction();
+            foreach($purchase->payments as $payment)
+            {
+                transactions::where('refID', $payment->refID)->delete();
+                $payment->delete();
+            }
+            foreach($purchase->details as $product)
+            {
+                stock::where('refID', $product->refID)->delete();
+                $product->delete();
+            }
+            transactions::where('refID', $purchase->refID)->delete();
+
+            $purchase->update(
+                [
+                    'vendorID'        => $request->vendorID,
+                    'date'            => $request->date,
+                    'notes'           => $request->notes,
+                    'discount'        => $request->discount,
+                    'fright'          => $request->fright,
+                    'fright1'          => $request->fright1,
+                    'wh'              => $request->whTax,
+                    'inv'             => $request->inv,
+                  ]
+            );
+
+            $ids = $request->id;
+
+            $total = 0;
+            $ref = $purchase->refID;
+            dashboard();
+            foreach($ids as $key => $id)
+            {
+                $unit = units::find($request->unit[$key]);
+                $qty = ($request->qty[$key] * $unit->value) + $request->bonus[$key];
+                $qty1 = $request->qty[$key] * $unit->value;
+                $pprice = $request->pprice[$key];
+                $price = $request->price[$key];
+                $wsprice = $request->wsprice[$key];
+                $tp = $request->tp[$key];
+                $amount = $pprice * $qty1;
+                $total += $amount;
+
+                purchase_details::create(
+                    [
+                        'purchaseID'    => $purchase->id,
+                        'productID'     => $id,
+                        'gprice'        => $request->gprice[$key],
+                        'cost'          => $request->cost[$key],
+                        'pprice'        => $pprice,
+                        'price'         => $price,
+                        'wsprice'       => $wsprice,
+                        'tp'            => $tp,
+                        'qty'           => $qty1,
+                        'gstValue'      => $request->gstValue[$key],
+                        'amount'        => $amount,
+                        'date'          => $request->date,
+                        'bonus'         => $request->bonus[$key],
+                        'unitID'        => $unit->id,
+                        'unitValue'     => $unit->value,
+                        'refID'         => $ref,
+                    ]
+                );
+                createStock($id, $qty, 0, $request->date, "Purchased", $ref);
+
+                $product = products::find($id);
+                $product->update(
+                    [
+                        'pprice' => $pprice,
+                        'price'  => $price,
+                        'wsprice' => $wsprice,
+                    ]
+                );
+            }
+
+            $whTax = $total * $request->whTax / 100;
+
+            $net = ($total + $whTax + $request->fright1) - ($request->discount + $request->fright);
+
+            $purchase->update(
+                [
+
+                    'whValue'   => $whTax,
+                    'net'       => $net,
+                ]
+            );
+
+            if($request->status == 'paid')
+            {
+                purchase_payments::create(
+                    [
+                        'purchaseID'    => $purchase->id,
+                        'accountID'     => $request->accountID,
+                        'date'          => $request->date,
+                        'amount'        => $net,
+                        'notes'         => "Full Paid",
+                        'refID'         => $ref,
+                    ]
+                );
+
+                createTransaction($request->accountID, $request->date, 0, $net, "Payment of Purchase No. $purchase->id", $ref);
+            }
+            else
+            {
+                createTransaction($request->vendorID, $request->date, 0, $net, "Pending Amount of Purchase No. $purchase->id", $ref);
+            }
+            DB::commit();
+            return back()->with('success', "Purchase Updated");
+        }
+        catch(\Exception $e)
+        {
+            DB::rollback();
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy($id)
+    {
+
+        try
+        {
+            DB::beginTransaction();
+            $purchase = purchase::find($id);
+            foreach($purchase->payments as $payment)
+            {
+                transactions::where('refID', $payment->refID)->delete();
+                $payment->delete();
+            }
+            foreach($purchase->details as $product)
+            {
+                stock::where('refID', $product->refID)->delete();
+                $product->delete();
+            }
+            transactions::where('refID', $purchase->refID)->delete();
+            $purchase->delete();
+            DB::commit();
+            session()->forget('confirmed_password');
+            return redirect()->route('purchase.index')->with('success', "Purchase Deleted");
+        }
+        catch(\Exception $e)
+        {
+            DB::rollBack();
+            session()->forget('confirmed_password');
+            return redirect()->route('purchase.index')->with('error', $e->getMessage());
+        }
+    }
+
+    public function getSignleProduct($id)
+    {
+        $product = products::find($id);
+        return $product;
+    }
+}

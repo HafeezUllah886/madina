@@ -11,7 +11,9 @@
                             <div class="card-header border-bottom-dashed p-4">
                                 <div class="d-flex">
                                     <div class="flex-grow-1">
-                                        <img src="{{asset('assets/images/logo.png')}}" style="width:250px;">
+                                       
+                                        <h1>{{ projectNameHeader() }}</h1>
+
                                         
                                     </div>
                                     <div class="flex-shrink-0 mt-sm-0 mt-3">

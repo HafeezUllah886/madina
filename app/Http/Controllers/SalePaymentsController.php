@@ -1,2 +1,114 @@
 <?php
- namespace App\Http\Controllers; use App\Models\accounts; use App\Models\sale_payments; use App\Models\sales; use App\Models\transactions; use Illuminate\Http\Request; use Illuminate\Support\Facades\DB; class SalePaymentsController extends Controller { public function index($id) { $sale = sales::with("\144\x65\x74\141\x69\x6c\163", "\160\x61\171\155\x65\156\164\x73")->find($id); $amount = $sale->net; $paid = $sale->payments->sum("\x61\x6d\x6f\165\156\164"); $due = $amount - $paid; $accounts = accounts::business()->get(); return view("\163\141\154\145\163\x2e\x70\141\171\155\145\x6e\164\163", compact("\163\x61\154\145", "\144\x75\145", "\141\143\x63\157\x75\156\x74\x73")); } public function create() { } public function store(Request $request) { try { DB::beginTransaction(); $ref = getRef(); $sale = sales::find($request->salesID); sale_payments::create(array("\163\x61\x6c\x65\x73\x49\104" => $sale->id, "\x61\x63\x63\x6f\x75\156\164\111\x44" => $request->accountID, "\144\x61\164\145" => $request->date, "\141\155\x6f\x75\x6e\x74" => $request->amount, "\x6e\x6f\x74\145\163" => $request->notes, "\x72\x65\146\x49\104" => $ref)); createTransaction($request->accountID, $request->date, $request->amount, 0, "\x50\141\171\155\145\x6e\164\x20\157\146\40\x49\156\166\x20\116\x6f\x2e\40{$sale->id}", $ref); createTransaction($sale->customerID, $request->date, $request->amount, 0, "\120\x61\171\x6d\x65\156\x74\x20\157\x66\40\111\156\x76\x20\116\x6f\x2e\40{$sale->id}", $ref); DB::commit(); return back()->with("\x73\165\143\143\x65\163\x73", "\120\x61\171\155\145\156\164\x20\123\141\166\x65\x64"); } catch (\Exception $e) { DB::rollBack(); return back()->with("\x65\x72\162\157\x72", $e->getMessage()); } } public function show($id) { $payment = sale_payments::find($id); return view("\x73\x61\x6c\x65\x73\56\162\x65\143\145\x69\160\x74", compact("\x70\x61\x79\x6d\145\156\x74")); } public function edit(sale_payments $sale_payments) { } public function update(Request $request, sale_payments $sale_payments) { } public function destroy($id, $ref) { try { DB::beginTransaction(); sale_payments::where("\162\145\x66\111\104", $ref)->delete(); transactions::where("\x72\145\x66\x49\x44", $ref)->delete(); DB::commit(); session()->forget("\x63\x6f\x6e\x66\151\162\x6d\145\144\x5f\x70\141\x73\x73\167\x6f\x72\144"); return redirect()->route("\x73\141\154\145\120\x61\x79\155\x65\x6e\x74\56\x69\x6e\144\145\x78", $id)->with("\163\x75\143\x63\145\163\163", "\123\141\x6c\x65\x20\120\141\x79\155\x65\x6e\x74\40\x44\145\x6c\x65\x74\145\144"); } catch (\Exception $e) { DB::rollBack(); session()->forget("\x63\157\156\146\x69\x72\x6d\145\144\137\160\x61\x73\163\x77\x6f\162\x64"); return redirect()->route("\x73\x61\154\x65\120\x61\x79\155\145\x6e\164\56\151\156\144\x65\170", $id)->with("\145\x72\162\157\x72", $e->getMessage()); } } }
+
+namespace App\Http\Controllers;
+
+use App\Models\accounts;
+use App\Models\sale_payments;
+use App\Models\sales;
+use App\Models\transactions;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
+class SalePaymentsController extends Controller
+{
+    /**
+     * Display a listing of the resource.
+     */
+    public function index($id)
+    {
+        $sale = sales::with('details', 'payments')->find($id);
+        $amount = $sale->net;
+        $paid = $sale->payments->sum('amount');
+        $due = $amount - $paid;
+
+        $accounts = accounts::business()->get();
+
+        return view('sales.payments', compact('sale', 'due', 'accounts'));
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     */
+    public function create()
+    {
+        //
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(Request $request)
+    {
+        try{
+            DB::beginTransaction();
+            $ref = getRef();
+            $sale = sales::find($request->salesID);
+            sale_payments::create(
+                [
+                    'salesID'       => $sale->id,
+                    'accountID'     => $request->accountID,
+                    'date'          => $request->date,
+                    'amount'        => $request->amount,
+                    'notes'         => $request->notes,
+                    'refID'         => $ref,
+                ]
+            );
+
+            createTransaction($request->accountID, $request->date,$request->amount, 0, "Payment of Inv No. $sale->id", $ref);
+            createTransaction($sale->customerID, $request->date,$request->amount, 0, "Payment of Inv No. $sale->id", $ref);
+
+            DB::commit();
+            return back()->with('success', "Payment Saved");
+        }
+        catch(\Exception $e)
+        {
+            DB::rollBack();
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
+    public function show($id)
+    {
+        $payment = sale_payments::find($id);
+
+        return view('sales.receipt', compact('payment'));
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(sale_payments $sale_payments)
+    {
+        //
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, sale_payments $sale_payments)
+    {
+        //
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy($id, $ref)
+    {
+        try
+        {
+            DB::beginTransaction();
+            sale_payments::where('refID', $ref)->delete();
+            transactions::where('refID', $ref)->delete();
+            DB::commit();
+            session()->forget('confirmed_password');
+            return redirect()->route('salePayment.index', $id)->with('success', "Sale Payment Deleted");
+        }
+        catch(\Exception $e)
+        {
+            DB::rollBack();
+            session()->forget('confirmed_password');
+            return redirect()->route('salePayment.index', $id)->with('error', $e->getMessage());
+        }
+    }
+}

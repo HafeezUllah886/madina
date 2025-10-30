@@ -4,19 +4,19 @@
         <!-- Dark Logo-->
         <a href="{{route('dashboard')}}" class="logo logo-dark">
             <span class="logo-sm">
-                <h3 class="text-white">JB</h3>
+                <h3 class="text-white">{{projectNameShort()}}</h3>
             </span>
             <span class="logo-lg">
-                <h3 class="text-white mt-3">JAFFAR & BROTHERS</h3>
+                <h3 class="text-white mt-3">{{projectNameAuth()}}</h3>
             </span>
         </a>
         <!-- Light Logo-->
         <a href="{{route('dashboard')}}" class="logo logo-light">
             <span class="logo-sm">
-                <h3 class="text-white">JB</h3>
+                <h3 class="text-white">{{projectNameShort()}}</h3>
             </span>
             <span class="logo-lg">
-                <h3 class="text-white mt-3">JAFFAR & BROTHERS</h3>
+                <h3 class="text-white mt-3">{{projectNameAuth()}}</h3>
             </span>
         </a>
         <button type="button" class="btn btn-sm p-0 fs-20 header-item float-end btn-vertical-sm-hover"

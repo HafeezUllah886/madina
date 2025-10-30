@@ -1,2 +1,107 @@
 <?php
- namespace App\Http\Controllers; use App\Models\accounts; use App\Models\expenses; use App\Models\transactions; use Illuminate\Http\Request; use Illuminate\Support\Facades\DB; class ExpensesController extends Controller { public function index() { $expenses = expenses::orderby("\x69\x64", "\144\145\x73\143")->get(); $accounts = accounts::business()->get(); return view("\106\151\156\x61\156\143\x65\x2e\x65\x78\x70\145\156\163\145\56\x69\x6e\x64\145\170", compact("\x65\170\x70\x65\x6e\x73\x65\163", "\141\143\143\157\165\x6e\x74\163")); } public function create() { } public function store(Request $request) { try { DB::beginTransaction(); $ref = getRef(); expenses::create(array("\x61\x63\143\157\165\x6e\164\111\104" => $request->accountID, "\x61\155\x6f\165\x6e\164" => $request->amount, "\x64\x61\x74\x65" => $request->date, "\156\157\x74\x65\x73" => $request->notes, "\162\x65\146\x49\x44" => $ref)); createTransaction($request->accountID, $request->date, 0, $request->amount, "\105\170\x70\145\156\x73\145\40\55\40" . $request->notes, $ref); DB::commit(); return back()->with("\163\x75\x63\x63\x65\163\x73", "\x45\170\160\x65\156\163\145\40\123\141\x76\x65\144"); } catch (\Exception $e) { DB::rollBack(); return back()->with("\x65\x72\162\157\162", $e->getMessage()); } } public function show(expenses $expenses) { } public function edit(expenses $expenses) { } public function update(Request $request, expenses $expenses) { } public function delete($ref) { try { DB::beginTransaction(); expenses::where("\x72\x65\x66\x49\104", $ref)->delete(); transactions::where("\x72\145\146\111\x44", $ref)->delete(); DB::commit(); session()->forget("\143\157\x6e\x66\151\x72\155\145\x64\x5f\160\x61\x73\x73\167\x6f\162\x64"); return redirect()->route("\x65\x78\x70\x65\156\x73\145\163\56\151\x6e\144\145\170")->with("\x73\165\x63\143\145\163\x73", "\x45\x78\160\145\x6e\x73\145\x20\104\145\x6c\x65\164\145\x64"); } catch (\Exception $e) { DB::rollBack(); session()->forget("\x63\x6f\x6e\146\x69\x72\155\x65\x64\x5f\160\x61\x73\163\x77\157\x72\x64"); return redirect()->route("\x65\170\x70\145\x6e\163\x65\163\56\x69\x6e\144\x65\x78")->with("\x65\162\162\x6f\162", $e->getMessage()); } } }
+
+namespace App\Http\Controllers;
+
+use App\Models\accounts;
+use App\Models\expenses;
+use App\Models\transactions;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
+class ExpensesController extends Controller
+{
+    /**
+     * Display a listing of the resource.
+     */
+    public function index()
+    {
+        $expenses = expenses::orderby('id', 'desc')->get();
+        $accounts = accounts::business()->get();
+        return view('Finance.expense.index', compact('expenses', 'accounts'));
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     */
+    public function create()
+    {
+        //
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(Request $request)
+    {
+        try
+        {
+            DB::beginTransaction();
+            $ref = getRef();
+            expenses::create(
+                [
+                    'accountID' => $request->accountID,
+                    'amount' => $request->amount,
+                    'date' => $request->date,
+                    'notes' => $request->notes,
+                    'refID' => $ref,
+                ]
+            );
+
+            createTransaction($request->accountID, $request->date, 0, $request->amount, "Expense - ".$request->notes, $ref);
+
+            DB::commit();
+            return back()->with('success', 'Expense Saved');
+        }
+        catch(\Exception $e)
+        {
+            DB::rollBack();
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(expenses $expenses)
+    {
+        //
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(expenses $expenses)
+    {
+        //
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, expenses $expenses)
+    {
+        //
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function delete($ref)
+    {
+        try
+        {
+            DB::beginTransaction();
+            expenses::where('refID', $ref)->delete();
+            transactions::where('refID', $ref)->delete();
+            DB::commit();
+            session()->forget('confirmed_password');
+            return redirect()->route('expenses.index')->with('success', "Expense Deleted");
+        }
+        catch(\Exception $e)
+        {
+            DB::rollBack();
+            session()->forget('confirmed_password');
+            return redirect()->route('expenses.index')->with('error', $e->getMessage());
+        }
+    }
+}

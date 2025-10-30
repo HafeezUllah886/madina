@@ -10,25 +10,11 @@
                             </div>
                             <div class="card-header border-bottom-dashed p-4">
                                 <div class="d-flex">
-                                    <div class="flex-grow-1">
-                                        <img src="{{asset('assets/images/logo.png')}}" style="width:250px;">
-                                        <div class="mt-sm-5 mt-4">
-                                            <div class="row">
-                                                <div class="col-6">
-                                                    <h6 class="text-muted text-uppercase fw-semibold">Industrial Area, Sirki Road, Quetta</h6>
-                                                    <p class="text-muted mb-1" id="address-details">NTN: 2645388-6</p>
-                                                    <p class="text-muted mb-0" id="zip-code"><span>0331-8358638 | </span> jaffarqta92@gmail.com</p>
-                                                </div>
-                                                <div class="col-6">
-                                                    <p class="text-muted mb-2 text-uppercase fw-semibold">Customer</p>
-                                                    <h5 class="fs-14 mb-0"> <span class="text-muted">M/S :</span> {{$target->customer->title}}</h5>
-                                                    <h5 class="fs-14 mb-0"> <span class="text-muted">CNIC :</span> {{$target->customer->cnic ?? "NA"}} | <span class="text-muted">Contact :</span> {{$target->customer->contact ?? "NA"}}</h5>
-                                                    <h5 class="fs-14 mb-0"> <span class="text-muted">NTN #</span> {{$target->customer->ntn ?? "NA"}} | <span class="text-muted">STRN #</span> {{$target->customer->strn ?? "NA"}}</h5>
-                                                    <h5 class="fs-14 mb-0"> <span class="text-muted">Address :</span> {{$target->customer->address ?? "NA"}}</h5>
-                                                </div>
-                                            </div>
+                                   
+                                        <div class="flex-grow-1">
+                                        <h1>{{ projectNameHeader() }}</h1>
 
-                                        </div>
+        
                                     </div>
                                     <div class="flex-shrink-0 mt-sm-0 mt-3">
                                         <h3>Target Report</h3>

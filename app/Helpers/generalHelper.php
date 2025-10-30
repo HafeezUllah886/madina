@@ -160,3 +160,18 @@ function calculateGrowthPercentage($oldValue, $newValue) {
     return $growthPercentage;
 }
 
+
+function projectNameAuth()
+{
+    return "MADINA IMPEX";
+}
+
+function projectNameHeader()
+{
+    return "MADINA IMPEX";
+}
+function projectNameShort()
+{
+    return "MI";
+}
+

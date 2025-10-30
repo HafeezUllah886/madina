@@ -102,7 +102,7 @@ class AccountsController extends Controller
     {
         $account = accounts::find($id);
 
-        $transactions = transactions::where('accountID', $id)->whereBetween('date', [$from, $to])->orderBy('date', 'asc')->get();
+        $transactions = transactions::where('accountID', $id)->whereBetween('date', [$from, $to])->get();
 
         $pre_cr = transactions::where('accountID', $id)->whereDate('date', '<', $from)->sum('cr');
         $pre_db = transactions::where('accountID', $id)->whereDate('date', '<', $from)->sum('db');

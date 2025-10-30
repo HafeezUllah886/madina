@@ -1,2 +1,45 @@
 <?php
- namespace App\Http\Controllers; use App\Models\User; use Illuminate\Http\Request; use Illuminate\Support\Facades\DB; use Illuminate\Support\Facades\Hash; class profileController extends Controller { public function index() { return view("\141\165\164\x68\x2e\x70\x72\x6f\146\x69\154\x65"); } public function update(request $req) { $req->validate(array("\156\141\x6d\x65" => "\x72\145\x71\165\x69\162\145\144\174\x75\156\151\x71\x75\145\x3a\x75\x73\145\x72\x73\x2c\x6e\141\155\145\x2c" . auth()->user()->id, "\145\155\x61\151\x6c" => "\x72\145\x71\165\x69\x72\x65\144\x7c\x75\x6e\151\161\165\x65\72\x75\163\x65\x72\163\x2c\x65\x6d\x61\x69\x6c\54" . auth()->user()->id)); User::find(auth()->user()->id)->update($req->only("\x6e\x61\x6d\x65", "\x65\155\x61\151\x6c")); return back()->with("\x73\165\143\x63\x65\x73\x73", "\x50\162\157\x66\x69\154\145\x20\125\160\x64\141\164\145\x64"); } public function changePassword(request $req) { $req->validate(array("\157\x6c\144\x5f\x70\x61\163\x73\167\x6f\162\144" => "\162\x65\161\165\x69\162\145\x64\x7c\x63\x75\x72\x72\145\156\x74\137\160\x61\x73\163\167\157\162\x64\x3a\x77\145\142", "\x6e\145\x77\137\160\x61\163\163\x77\x6f\162\144" => "\162\145\161\x75\x69\162\x65\144\174\155\151\x6e\x3a\70\x7c\143\157\x6e\146\151\162\155\x65\144"), array("\157\x6c\144\137\x70\141\x73\163\x77\157\162\x64\x2e\143\165\x72\162\x65\156\164\137\160\x61\163\163\x77\157\x72\144" => "\117\154\144\x20\120\x61\163\163\x77\157\162\144\x20\x69\163\x20\111\x6e\x63\x6f\162\162\x65\143\x74")); $user = auth()->user(); $user->password = Hash::make($req->new_password); $user->save(); return back()->with("\x73\x75\x63\143\x65\x73\163", "\x50\x61\x73\x73\167\157\162\x64\40\125\x70\x64\141\x74\145\x64"); } }
+
+namespace App\Http\Controllers;
+
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+
+class profileController extends Controller
+{
+    public function index()
+    {
+        return view('auth.profile');
+    }
+
+    public function  update(request $req)
+    {
+        $req->validate([
+            'name'  => 'required|unique:users,name,'.auth()->user()->id,
+            'email'  => 'required|unique:users,email,'.auth()->user()->id,
+        ]);
+
+        User::find(auth()->user()->id)->update($req->only('name', 'email'));
+
+        return back()->with('success', "Profile Updated");
+    }
+
+    public function changePassword(request $req)
+    {
+        $req->validate([
+            'old_password'  => 'required|current_password:web',
+            'new_password'  => 'required|min:8|confirmed',
+        ],
+    [
+        'old_password.current_password' => "Old Password is Incorrect",
+        ]); 
+
+        $user = auth()->user();
+        $user->password = Hash::make($req->new_password);
+        $user->save();
+
+        return back()->with('success', 'Password Updated');
+    }
+}

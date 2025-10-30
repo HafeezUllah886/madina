@@ -1,2 +1,224 @@
 <?php
- namespace App\Http\Controllers; use App\Models\targets; use App\Http\Controllers\Controller; use App\Models\accounts; use App\Models\products; use App\Models\targetDetails; use App\Models\units; use Illuminate\Http\Request; use Illuminate\Support\Facades\DB; class TargetsController extends Controller { public function index() { $targets = targets::orderBy("\145\x6e\144\x44\141\x74\145", "\144\145\x73\x63")->get(); foreach ($targets as $target) { $totalTarget = 0; $totalSold = 0; foreach ($target->details as $product) { $qtySold = DB::table("\163\141\154\x65\x73")->join("\163\x61\x6c\x65\x5f\144\145\164\x61\151\x6c\x73", "\163\141\154\145\x73\x2e\x69\144", "\x3d", "\x73\141\x6c\x65\x5f\x64\145\164\x61\x69\x6c\x73\56\x73\x61\154\145\x73\x49\x44")->where("\x73\141\x6c\x65\x73\x2e\x63\x75\x73\x74\x6f\155\x65\162\111\x44", $target->customerID)->where("\x73\x61\x6c\145\x5f\144\145\x74\141\x69\154\x73\x2e\160\x72\157\144\x75\x63\x74\111\x44", $product->productID)->whereBetween("\163\x61\x6c\145\x5f\144\145\164\x61\x69\154\x73\56\144\141\164\x65", array($target->startDate, $target->endDate))->sum("\x73\x61\x6c\145\137\144\x65\164\x61\x69\x6c\x73\x2e\161\164\x79"); $product->sold = $qtySold; $targetQty = $product->qty; if ($qtySold > $targetQty) { $qtySold = $targetQty; } $product->per = $qtySold / $targetQty * 100; $totalTarget += $targetQty; $totalSold += $qtySold; } $totalPer = $totalSold / $totalTarget * 100; $target->totalPer = $totalPer; if ($target->endDate > now()) { $target->campain = "\117\160\145\x6e"; $target->campain_color = "\163\165\x63\143\x65\x73\x73"; } else { $target->campain = "\x43\x6c\157\163\145\144"; $target->campain_color = "\167\x61\x72\x6e\x69\156\147"; } if ($totalPer >= 100) { $target->goal = "\x54\x61\162\x67\145\164\40\x41\143\150\x69\x65\x76\x65\x64"; $target->goal_color = "\x73\165\143\143\145\163\163"; } elseif ($target->endDate > now() && $totalPer < 100) { $target->goal = "\x49\156\40\120\162\157\x67\x72\x65\163\163"; $target->goal_color = "\151\x6e\146\x6f"; } else { $target->goal = "\116\157\x74\40\x41\x63\150\151\x65\166\x65\x64"; $target->goal_color = "\x64\x61\x6e\x67\145\162"; } } return view("\164\x61\162\147\x65\164\56\x69\156\144\145\170", compact("\164\141\162\147\145\164\x73")); } public function create() { $products = products::orderby("\x6e\141\155\x65", "\x61\x73\143")->get(); $units = units::all(); $customers = accounts::customer()->get(); return view("\164\x61\162\147\145\x74\x2e\x63\x72\145\x61\164\x65", compact("\x70\x72\157\144\165\x63\164\163", "\x75\156\151\164\163", "\x63\x75\x73\x74\157\155\145\x72\163")); } public function store(Request $request) { try { DB::beginTransaction(); $target = targets::create(array("\x63\165\x73\164\x6f\x6d\145\x72\111\104" => $request->customerID, "\x73\164\141\162\164\x44\x61\x74\145" => $request->startDate, "\x65\156\x64\x44\x61\164\145" => $request->endDate, "\x6e\157\x74\145\x73" => $request->notes)); $ids = $request->id; foreach ($ids as $key => $id) { $unit = units::find($request->unit[$key]); $qty = $request->qty[$key] * $unit->value; targetDetails::create(array("\x74\141\162\x67\x65\x74\111\104" => $target->id, "\x70\162\x6f\x64\165\143\x74\x49\104" => $id, "\x71\164\171" => $qty, "\x75\x6e\x69\164\111\x44" => $unit->id)); } DB::commit(); return back()->with("\163\x75\x63\143\145\163\163", "\x54\141\x72\147\x65\164\x20\x53\141\166\x65\x64"); } catch (\Exception $e) { DB::rollBack(); return back()->with("\x65\162\162\157\162", $e->getMessage()); } } public function show(targets $target) { $totalTarget = 0; $totalSold = 0; foreach ($target->details as $product) { $qtySold = DB::table("\x73\141\x6c\145\x73")->join("\x73\141\154\145\137\x64\x65\x74\x61\151\154\x73", "\163\141\154\145\x73\x2e\151\x64", "\75", "\163\x61\x6c\145\x5f\144\x65\164\141\151\x6c\x73\56\x73\x61\154\x65\x73\x49\104")->where("\163\141\x6c\145\x73\x2e\x63\165\x73\x74\x6f\x6d\145\x72\111\x44", $target->customerID)->where("\163\x61\154\x65\x5f\144\x65\164\141\x69\154\x73\x2e\x70\x72\x6f\144\x75\x63\164\x49\104", $product->productID)->whereBetween("\x73\141\x6c\145\137\x64\x65\x74\x61\151\154\x73\56\x64\x61\164\145", array($target->startDate, $target->endDate))->sum("\x73\141\x6c\x65\137\x64\145\164\x61\151\154\x73\56\161\x74\x79"); $targetQty = $product->qty; if ($qtySold > $targetQty) { $qtySold = $targetQty; } $product->sold = $qtySold; $product->per = $qtySold / $targetQty * 100; $totalTarget += $targetQty; $totalSold += $qtySold; } $totalPer = $totalSold / $totalTarget * 100; $target->totalPer = $totalPer; if ($target->endDate > now()) { $target->campain = "\x4f\x70\145\156"; $target->campain_color = "\163\165\x63\x63\x65\x73\x73"; } else { $target->campain = "\x43\154\x6f\x73\145\144"; $target->campain_color = "\x77\x61\162\156\151\x6e\147"; } if ($totalPer >= 100) { $target->goal = "\124\x61\162\x67\x65\x74\40\x41\x63\150\151\145\x76\145\x64"; $target->goal_color = "\163\x75\x63\143\x65\x73\x73"; } elseif ($target->endDate > now() && $totalPer < 100) { $target->goal = "\111\156\x20\x50\162\x6f\147\x72\145\x73\163"; $target->goal_color = "\x69\x6e\x66\157"; } else { $target->goal = "\116\157\x74\40\x41\x63\x68\x69\x65\166\x65\144"; $target->goal_color = "\144\x61\x6e\x67\145\x72"; } return view("\164\x61\162\x67\x65\164\56\x76\x69\x65\x77", compact("\x74\x61\x72\147\x65\164")); } public function edit(targets $targets) { } public function update(Request $request, targets $targets) { } public function destroy($id) { $target = targets::find($id); $target->details()->delete(); $target->delete(); session()->forget("\143\x6f\x6e\x66\x69\162\155\145\x64\137\160\141\163\x73\167\157\162\x64"); return to_route("\164\x61\162\147\x65\x74\163\56\x69\x6e\x64\x65\x78")->with("\163\165\143\143\145\x73\x73", "\x54\141\162\x67\145\164\x20\104\x65\154\x65\164\x65\163"); } }
+
+namespace App\Http\Controllers;
+
+use App\Models\targets;
+use App\Http\Controllers\Controller;
+use App\Models\accounts;
+use App\Models\products;
+use App\Models\targetDetails;
+use App\Models\units;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
+class TargetsController extends Controller
+{
+    /**
+     * Display a listing of the resource.
+     */
+    public function index()
+    {
+        $targets = targets::orderBy("endDate", 'desc')->get();
+        foreach($targets as $target)
+        {
+            $totalTarget = 0;
+            $totalSold = 0;
+            
+           foreach($target->details as $product)
+           {
+                $qtySold = DB::table('sales')
+                ->join('sale_details', 'sales.id', '=', 'sale_details.salesID')
+                ->where('sales.customerID', $target->customerID)  // Filter by customer ID
+                ->where('sale_details.productID', $product->productID)  // Filter by product ID
+                ->whereBetween('sale_details.date', [$target->startDate, $target->endDate])  // Filter by date range
+                ->sum('sale_details.qty');
+                $product->sold = $qtySold;
+                $targetQty = $product->qty;
+
+                if($qtySold > $targetQty)
+                {
+                    $qtySold = $targetQty;
+                }
+                $product->per = $qtySold / $targetQty * 100;
+               
+
+                $totalTarget += $targetQty;
+                $totalSold += $qtySold;
+           }
+           $totalPer = $totalSold / $totalTarget  * 100;
+           $target->totalPer = $totalPer;
+
+            if($target->endDate > now())
+            {
+
+                $target->campain = "Open";
+                $target->campain_color = "success";
+            }
+            else
+            {
+                $target->campain = "Closed";
+                $target->campain_color = "warning";
+            }
+
+            if($totalPer >= 100)
+            {
+                $target->goal = "Target Achieved";
+                $target->goal_color = "success";
+            }
+            elseif($target->endDate > now() && $totalPer < 100)
+            {
+                $target->goal = "In Progress";
+                $target->goal_color = "info";
+            }
+            else
+            {
+                $target->goal = "Not Achieved";
+                $target->goal_color = "danger";
+            }
+        }
+        return view('target.index', compact('targets'));
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     */
+    public function create()
+    {
+        $products = products::orderby('name', 'asc')->get();
+        $units = units::all();
+        $customers = accounts::customer()->get();
+        return view('target.create', compact('products', 'units', 'customers'));
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(Request $request)
+    {
+        try
+        {
+            DB::beginTransaction();
+            $target = targets::create(
+                [
+                    'customerID'    => $request->customerID,
+                    'startDate'     => $request->startDate,
+                    'endDate'       => $request->endDate,
+                    'notes'         => $request->notes,
+                ]
+            );
+
+            $ids = $request->id;
+
+            foreach($ids as $key => $id)
+            {
+                $unit = units::find($request->unit[$key]);
+                $qty = $request->qty[$key] * $unit->value;
+                targetDetails::create(
+                    [
+                        'targetID'      => $target->id,
+                        'productID'     => $id,
+                        'qty'           => $qty,
+                        'unitID'        => $unit->id,
+                    ]
+                );
+            }
+            DB::commit();
+            return back()->with("success", "Target Saved");
+        }
+        catch(\Exception $e)
+        {
+            DB::rollBack();
+            return back()->with("error", $e->getMessage());
+        }
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(targets $target)
+    {
+            $totalTarget = 0;
+            $totalSold = 0;
+            
+           foreach($target->details as $product)
+           {
+                $qtySold = DB::table('sales')
+                ->join('sale_details', 'sales.id', '=', 'sale_details.salesID')
+                ->where('sales.customerID', $target->customerID)  // Filter by customer ID
+                ->where('sale_details.productID', $product->productID)  // Filter by product ID
+                ->whereBetween('sale_details.date', [$target->startDate, $target->endDate])  // Filter by date range
+                ->sum('sale_details.qty');
+                
+                $targetQty = $product->qty;
+
+                if($qtySold > $targetQty)
+                {
+                    $qtySold = $targetQty;
+                }
+                $product->sold = $qtySold;
+                $product->per = $qtySold / $targetQty * 100;
+
+                $totalTarget += $targetQty;
+                $totalSold += $qtySold;
+           }
+           $totalPer = $totalSold / $totalTarget * 100;
+           $target->totalPer = $totalPer;
+
+            if($target->endDate > now())
+            {
+
+                $target->campain = "Open";
+                $target->campain_color = "success";
+            }
+            else
+            {
+                $target->campain = "Closed";
+                $target->campain_color = "warning";
+            }
+
+            if($totalPer >= 100)
+            {
+                $target->goal = "Target Achieved";
+                $target->goal_color = "success";
+            }
+            elseif($target->endDate > now() && $totalPer < 100)
+            {
+                $target->goal = "In Progress";
+                $target->goal_color = "info";
+            }
+            else
+            {
+                $target->goal = "Not Achieved";
+                $target->goal_color = "danger";
+            }
+        return view('target.view', compact('target'));
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(targets $targets)
+    {
+        //
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, targets $targets)
+    {
+        //
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy($id)
+    {
+        $target = targets::find($id);
+        $target->details()->delete();
+        $target->delete();
+        session()->forget('confirmed_password');
+        return to_route('targets.index')->with("success", "Target Deletes");
+    }
+}

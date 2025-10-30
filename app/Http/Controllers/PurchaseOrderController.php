@@ -1,2 +1,213 @@
 <?php
- namespace App\Http\Controllers; use App\Models\purchase_order; use App\Http\Controllers\Controller; use App\Models\accounts; use App\Models\products; use App\Models\purchase_order_details; use App\Models\units; use Exception; use Illuminate\Http\Request; use Illuminate\Support\Facades\DB; class PurchaseOrderController extends Controller { public function index(Request $request) { $start = $request->start ?? now()->toDateString(); $end = $request->end ?? now()->toDateString(); $orders = purchase_order::whereBetween("\x64\x61\x74\145", array($start, $end))->orderby("\151\144", "\x64\x65\163\x63")->get(); return view("\x70\165\x72\143\150\141\x73\x65\137\157\x72\144\145\x72\x2e\151\x6e\x64\145\x78", compact("\157\x72\x64\145\x72\x73", "\x73\164\141\162\164", "\145\156\x64")); } public function create() { $products = products::orderby("\x6e\x61\x6d\145", "\x61\163\x63")->get(); $units = units::all(); $vendors = accounts::vendor()->get(); return view("\x70\165\162\143\x68\x61\x73\145\137\x6f\x72\x64\145\162\x2e\143\162\145\141\x74\x65", compact("\x70\162\x6f\144\x75\143\164\x73", "\165\156\151\x74\x73", "\166\145\156\x64\157\162\163")); } public function store(Request $request) { try { if ($request->isNotFilled("\151\x64")) { throw new Exception("\120\x6c\x65\141\163\x65\x20\123\x65\154\145\143\x74\40\x41\164\154\145\x61\163\164\40\x4f\x6e\145\40\x50\162\157\x64\165\143\164"); } DB::beginTransaction(); $ref = getRef(); $order = purchase_order::create(array("\166\145\x6e\x64\x6f\162\111\104" => $request->vendorID, "\x64\141\x74\x65" => $request->date, "\x6e\x6f\164\145\163" => $request->notes)); $ids = $request->id; $total = 0; foreach ($ids as $key => $id) { $unit = units::find($request->unit[$key]); $qty = $request->qty[$key] * $unit->value; $price = $request->price[$key]; $amount = $price * $qty; $total += $amount; purchase_order_details::create(array("\x6f\162\144\145\x72\111\x44" => $order->id, "\160\x72\x6f\x64\165\x63\164\111\104" => $id, "\x70\162\x69\143\145" => $price, "\x71\x74\171" => $qty, "\x61\155\157\165\156\164" => $amount, "\x75\x6e\x69\x74\111\104" => $unit->id, "\x75\156\151\x74\126\141\x6c\x75\145" => $unit->value)); } $order->update(array("\x6e\x65\x74" => $total)); DB::commit(); return back()->with("\x73\165\143\143\145\x73\x73", "\x50\165\x72\143\x68\x61\163\x65\40\117\x72\144\145\162\x20\103\162\145\141\164\145\x64"); } catch (\Exception $e) { DB::rollback(); return back()->with("\145\162\162\x6f\162", $e->getMessage()); } } public function show($id) { $order = purchase_order::findOrFail($id); return view("\160\x75\162\x63\150\x61\163\145\x5f\x6f\162\144\145\x72\56\166\151\145\x77", compact("\157\162\144\145\x72")); } public function edit($id) { $order = purchase_order::findOrFail($id); $products = products::orderby("\156\141\155\x65", "\x61\x73\143")->get(); $units = units::all(); $vendors = accounts::vendor()->get(); return view("\x70\x75\x72\143\x68\141\163\x65\x5f\157\x72\144\145\x72\x2e\x65\144\x69\x74", compact("\x70\x72\x6f\x64\x75\143\x74\163", "\x75\156\x69\164\x73", "\166\x65\x6e\144\157\162\x73", "\x6f\162\144\145\162")); } public function update(Request $request, $id) { try { if ($request->isNotFilled("\x69\144")) { throw new Exception("\120\154\x65\x61\x73\145\40\123\x65\x6c\145\143\x74\x20\x41\164\154\x65\x61\163\x74\40\x4f\156\145\x20\120\162\157\x64\165\x63\164"); } DB::beginTransaction(); $order = purchase_order::findOrFail($id); $order->details()->delete(); $order->update(array("\166\145\156\144\x6f\162\111\x44" => $request->vendorID, "\x64\141\x74\145" => $request->date, "\x6e\157\164\x65\163" => $request->notes)); $ids = $request->id; $total = 0; dashboard(); foreach ($ids as $key => $id) { $unit = units::find($request->unit[$key]); $qty = $request->qty[$key] * $unit->value; $price = $request->price[$key]; $amount = $price * $qty; $total += $amount; purchase_order_details::create(array("\x6f\x72\144\145\162\x49\104" => $order->id, "\x70\162\157\x64\x75\143\x74\x49\104" => $id, "\160\x72\151\143\145" => $price, "\161\x74\171" => $qty, "\141\x6d\x6f\x75\156\x74" => $amount, "\x75\156\x69\164\x49\104" => $unit->id, "\165\x6e\151\164\126\x61\154\165\145" => $unit->value)); } $order->update(array("\156\x65\164" => $total)); DB::commit(); return back()->with("\163\x75\x63\143\145\x73\163", "\x50\165\162\143\150\141\163\145\x20\117\162\x64\145\162\40\x55\x70\144\x61\x74\x65\144"); } catch (\Exception $e) { DB::rollback(); return back()->with("\x65\x72\x72\x6f\162", $e->getMessage()); } } public function destroy($id) { try { DB::beginTransaction(); $order = purchase_order::findOrFail($id); $order->details()->delete(); $order->delete(); DB::commit(); session()->forget("\143\x6f\x6e\x66\151\x72\155\x65\x64\137\160\x61\x73\163\167\x6f\x72\144"); return redirect()->route("\160\165\x72\143\x68\x61\163\145\137\157\162\x64\x65\162\56\x69\x6e\144\145\170")->with("\163\165\x63\x63\x65\x73\163", "\120\165\x72\143\x68\141\x73\145\x20\x4f\162\144\x65\162\x20\104\145\x6c\145\164\x65\x64"); } catch (\Exception $e) { DB::rollBack(); session()->forget("\143\157\x6e\146\x69\x72\x6d\145\x64\x5f\x70\x61\x73\x73\167\157\162\x64"); return redirect()->route("\x70\165\x72\x63\150\x61\163\145\x5f\157\x72\x64\145\x72\56\151\x6e\x64\x65\170")->with("\145\162\162\x6f\x72", $e->getMessage()); } } }
+
+namespace App\Http\Controllers;
+
+use App\Models\purchase_order;
+use App\Http\Controllers\Controller;
+use App\Models\accounts;
+use App\Models\products;
+use App\Models\purchase_order_details;
+use App\Models\units;
+use Exception;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
+class PurchaseOrderController extends Controller
+{
+    /**
+     * Display a listing of the resource.
+     */
+    public function index(Request $request)
+    {
+        $start = $request->start ?? now()->toDateString();
+        $end = $request->end ?? now()->toDateString();
+
+        $orders = purchase_order::whereBetween("date", [$start, $end])->orderby('id', 'desc')->get();
+        return view('purchase_order.index', compact('orders', 'start', 'end'));
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     */
+    public function create()
+    {
+        $products = products::orderby('name', 'asc')->get();
+        $units = units::all();
+        $vendors = accounts::vendor()->get();
+        return view('purchase_order.create', compact('products', 'units', 'vendors'));
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(Request $request)
+    {
+
+        try
+        {
+            if($request->isNotFilled('id'))
+            {
+                throw new Exception('Please Select Atleast One Product');
+            }
+            DB::beginTransaction();
+            $ref = getRef();
+            $order = purchase_order::create(
+                [
+                  'vendorID'        => $request->vendorID,
+                  'date'            => $request->date,
+                  'notes'           => $request->notes,
+                ]
+            );
+
+            $ids = $request->id;
+
+            $total = 0;
+            foreach($ids as $key => $id)
+            {
+                $unit = units::find($request->unit[$key]);
+                $qty = ($request->qty[$key] * $unit->value);
+                $price = $request->price[$key];
+                $amount = $price * $qty;
+                $total += $amount;
+
+                purchase_order_details::create(
+                    [
+                        'orderID'       => $order->id,
+                        'productID'     => $id,
+                        'price'         => $price,
+                        'qty'           => $qty,
+                        'amount'        => $amount,
+                        'unitID'        => $unit->id,
+                        'unitValue'     => $unit->value,
+                    ]
+                );
+            }
+
+            $order->update(
+                [
+                    'net'       => $total,
+                ]
+            );
+            DB::commit();
+            return back()->with('success', "Purchase Order Created");
+
+        }
+        catch(\Exception $e)
+        {
+            DB::rollback();
+            return back()->with('error', $e->getMessage());
+        }
+
+    }
+
+
+    /**
+     * Display the specified resource.
+     */
+    public function show($id)
+    {
+        $order = purchase_order::findOrFail($id);
+        return view('purchase_order.view', compact('order'));
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit($id)
+    {
+        $order = purchase_order::findOrFail($id);
+        $products = products::orderby('name', 'asc')->get();
+        $units = units::all();
+        $vendors = accounts::vendor()->get();
+        return view('purchase_order.edit', compact('products', 'units', 'vendors', 'order'));
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, $id)
+    {
+        try
+        {
+            if($request->isNotFilled('id'))
+            {
+                throw new Exception('Please Select Atleast One Product');
+            }
+            DB::beginTransaction();
+            $order = purchase_order::findOrFail($id);
+            $order->details()->delete();
+
+            $order->update(
+                [
+                    'vendorID'        => $request->vendorID,
+                    'date'            => $request->date,
+                    'notes'           => $request->notes,
+                  ]
+            );
+
+            $ids = $request->id;
+
+            $total = 0;
+            dashboard();
+            foreach($ids as $key => $id)
+            {
+                $unit = units::find($request->unit[$key]);
+                $qty = $request->qty[$key] * $unit->value;
+                $price = $request->price[$key];
+                $amount = $price * $qty;
+                $total += $amount;
+
+                purchase_order_details::create(
+                    [
+                        'orderID'       => $order->id,
+                        'productID'     => $id,
+                        'price'         => $price,
+                        'qty'           => $qty,
+                        'amount'        => $amount,
+                        'unitID'        => $unit->id,
+                        'unitValue'     => $unit->value,
+                    ]
+                );
+            }
+
+
+            $order->update(
+                [
+                    'net'       => $total,
+                ]
+            );
+            DB::commit();
+            return back()->with('success', "Purchase Order Updated");
+        }
+        catch(\Exception $e)
+        {
+            DB::rollback();
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy($id)
+    {
+
+        try
+        {
+            DB::beginTransaction();
+            $order = purchase_order::findOrFail($id);
+           
+            $order->details()->delete();
+            $order->delete();
+            DB::commit();
+            session()->forget('confirmed_password');
+            return redirect()->route('purchase_order.index')->with('success', "Purchase Order Deleted");
+        }
+        catch(\Exception $e)
+        {
+            DB::rollBack();
+            session()->forget('confirmed_password');
+            return redirect()->route('purchase_order.index')->with('error', $e->getMessage());
+        }
+    }
+}

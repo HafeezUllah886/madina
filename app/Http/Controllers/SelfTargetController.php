@@ -16,13 +16,11 @@ use Illuminate\Support\Facades\DB;
 
 class SelfTargetController extends Controller
 {
-    public function index(Request $request)
+    public function index()
     {
-        $start = $request->start ?? firstDayOfMonth();
-        $end = $request->end ?? date('Y-m-d');
-        $targets = SelfTarget::orderBy("endDate", 'desc')->whereBetween('endDate', [$start, $end])->orWhereBetween('startDate', [$start, $end])->get();
+        $targets = SelfTarget::orderBy("endDate", 'desc')->get();
        
-        return view('self_target.index', compact('targets', 'start', 'end'));
+        return view('self_target.index', compact('targets'));
     }
 
     /**

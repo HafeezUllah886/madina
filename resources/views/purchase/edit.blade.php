@@ -44,9 +44,11 @@
 
                                 <table class="table table-striped table-hover">
                                     <thead>
-                                        <th width="30%">Item</th>
-                                        <th width="10%" class="text-center">Unit</th>
+                                        <th width="20%">Item</th>
+                                        <th  class="text-center">Unit</th>
                                         <th class="text-center">Qty</th>
+                                        <th class="text-center">Price</th>
+                                        <th class="text-center">Cost</th>
                                         <th class="text-center">P-Price</th>
                                         <th class="text-center">S-Price</th>
                                         <th class="text-center">WS Price</th>
@@ -80,6 +82,8 @@
                                                     <input type="number" name="qty[]" oninput="updateChanges({{ $id }})" min="0.1"
                                                     required step="any" value="{{$product->qty / $unitValue}}" class="form-control text-center" id="qty_{{ $id }}">
                                             </td>
+                                            <td class="no-padding"><input type="number" name="gprice[]" oninput="updateChanges({{$id}})" required step="any" value="{{$product->gprice}}" min="1" class="form-control text-center no-padding" id="gprice_{{$id}}"></td>
+                                            <td class="no-padding"><input type="number" name="cost[]" oninput="updateChanges({{$id}})" required step="any" value="{{$product->cost}}" min="1" class="form-control text-center no-padding" id="cost_{{$id}}"></td>
                                             <td class="no-padding"><input type="number" name="pprice[]" oninput="updateChanges({{$id}})" required step="any" value="{{$product->pprice}}" min="1" class="form-control text-center no-padding" id="pprice_{{$id}}"></td>
                                             <td class="no-padding"><input type="number" name="price[]" required step="any" value="{{$product->price}}" min="0" class="form-control text-center no-padding" id="price_{{$id}}"></td>
                                             <td class="no-padding"><input type="number" name="wsprice[]" required step="any" value="{{$product->wsprice}}" min="1" class="form-control text-center no-padding" id="wsprice_{{$id}}"></td>
@@ -94,7 +98,7 @@
                                     </tbody>
                                     <tfoot>
                                         <tr>
-                                            <th colspan="7" class="text-end">Total</th>
+                                            <th colspan="9" class="text-end">Total</th>
 
                                             <th class="text-end" id="totalGst">0.00</th>
                                             <th class="text-end" id="totalAmount">0.00</th>
@@ -254,7 +258,9 @@
                         html += '</select></td>';
                         html += '<td class="no-padding"><input type="number" name="qty[]" oninput="updateChanges(' + id + ')" min="0" required step="any" value="0" class="form-control text-center no-padding" id="qty_' + id + '"></td>';
 
-                        html += '<td class="no-padding"><input type="number" name="pprice[]" oninput="updateChanges(' + id + ')" required step="any" value="'+product.pprice+'" min="1" class="form-control text-center no-padding" id="pprice_' + id + '"></td>';
+                        html += '<td class="no-padding"><input type="number" name="gprice[]" oninput="updateChanges(' + id + ')" required step="any" value="'+product.pprice+'" min="1" class="form-control text-center no-padding" id="gprice_' + id + '"></td>';
+                        html += '<td class="no-padding"><input type="number" name="cost[]" oninput="updateChanges(' + id + ')" required step="any" value="0"  class="form-control text-center no-padding" id="cost_' + id + '"></td>';
+                        html += '<td class="no-padding"><input type="number" name="pprice[]" oninput="updateChanges(' + id + ')" required readonly step="any" value="'+product.pprice+'" min="1" class="form-control text-center no-padding" id="pprice_' + id + '"></td>';
                         html += '<td class="no-padding"><input type="number" name="price[]" required step="any" value="'+product.price+'" min="0" class="form-control text-center no-padding" id="price_' + id + '"></td>';
                         html += '<td class="no-padding"><input type="number" name="wsprice[]" required step="any" value="'+product.wsprice+'" min="1" class="form-control text-center no-padding" id="wsprice_' + id + '"></td>';
                         html += '<td class="no-padding"><input type="number" name="tp[]" required step="any" value="'+product.tp+'" min="1" class="form-control text-center no-padding" id="tp_' + id + '"></td>';
@@ -277,7 +283,10 @@
             var unit = $('#unit_' + id).find('option:selected');
             unit = unit.data('unit');
             var newQty = qty * unit;
-            var pprice = parseFloat($('#pprice_' + id).val());
+            var gprice = parseFloat($('#gprice_' + id).val());
+            var cost = parseFloat($('#cost_' + id).val());
+            var pprice = gprice + cost;
+            $('#pprice_'+id).val(pprice.toFixed(0));
             var tp = parseFloat($('#tp_' + id).val());
             var bonus = parseFloat($('#bonus_' + id).val());
 

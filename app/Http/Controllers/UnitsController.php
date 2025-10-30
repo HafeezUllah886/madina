@@ -1,2 +1,70 @@
 <?php
- namespace App\Http\Controllers; use App\Models\units; use Illuminate\Http\Request; class UnitsController extends Controller { public function index() { $units = units::all(); return view("\x70\x72\x6f\x64\x75\143\164\x73\56\x75\x6e\x69\x74\163", compact("\165\156\x69\164\x73")); } public function create() { } public function store(Request $request) { units::create($request->all()); return back()->with("\163\x75\x63\143\145\163\x73", "\x55\x6e\151\x74\x20\x43\162\145\x61\164\145\x64"); } public function show(units $units) { } public function edit(units $units) { } public function update(Request $request, $id) { $unit = units::find($id); $unit->update($request->only("\x6e\141\155\145", "\166\141\154\x75\x65")); return back()->with("\163\x75\x63\143\x65\x73\x73", "\125\156\x69\x74\x20\x55\160\x64\141\x74\x65\144"); } public function destroy(units $units) { } }
+
+namespace App\Http\Controllers;
+
+use App\Models\units;
+use Illuminate\Http\Request;
+
+class UnitsController extends Controller
+{
+    /**
+     * Display a listing of the resource.
+     */
+    public function index()
+    {
+        $units = units::all();
+
+        return view('products.units', compact('units'));
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     */
+    public function create()
+    {
+        //
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(Request $request)
+    {
+        units::create($request->all());
+        return back()->with('success', 'Unit Created');
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(units $units)
+    {
+        //
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(units $units)
+    {
+        //
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, $id)
+    {
+        $unit = units::find($id);
+        $unit->update($request->only('name', 'value'));
+        return back()->with('success', "Unit Updated");
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(units $units)
+    {
+        //
+    }
+}

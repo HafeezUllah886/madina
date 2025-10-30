@@ -1,2 +1,82 @@
 <?php
- namespace App\Http\Controllers; use App\Models\products; use App\Models\stock; use App\Models\units; use Illuminate\Http\Request; class StockController extends Controller { public function index() { $products = products::all(); $units = units::all(); return view("\x73\x74\157\x63\x6b\56\x69\156\144\x65\x78", compact("\160\x72\x6f\144\x75\x63\x74\x73", "\165\156\x69\164\163")); } public function create() { } public function store(Request $request) { } public function show($id, $unitID, $from, $to) { $product = products::find($id); $stocks = stock::where("\x70\x72\157\x64\x75\x63\164\111\104", $id)->whereBetween("\144\141\164\x65", array($from, $to))->get(); $pre_cr = stock::where("\x70\x72\157\144\165\143\x74\x49\104", $id)->whereDate("\x64\x61\x74\x65", "\74", $from)->sum("\x63\x72"); $pre_db = stock::where("\x70\162\157\144\x75\x63\164\111\x44", $id)->whereDate("\144\141\x74\x65", "\x3c", $from)->sum("\x64\x62"); $pre_balance = $pre_cr - $pre_db; $cur_cr = stock::where("\160\x72\157\x64\x75\143\164\x49\x44", $id)->sum("\x63\x72"); $cur_db = stock::where("\x70\x72\x6f\x64\x75\143\x74\111\104", $id)->sum("\x64\142"); $cur_balance = $cur_cr - $cur_db; $unit = units::find($unitID); return view("\x73\x74\157\143\x6b\56\144\x65\164\141\151\154\x73", compact("\160\x72\x6f\144\165\x63\164", "\x70\162\x65\137\142\x61\154\x61\156\143\x65", "\x63\165\162\137\142\141\154\141\x6e\x63\x65", "\x73\x74\x6f\143\153\163", "\165\x6e\x69\164", "\146\x72\x6f\155", "\164\157")); } public function edit(stock $stock) { } public function update(Request $request, stock $stock) { } public function destroy(stock $stock) { } }
+
+namespace App\Http\Controllers;
+
+use App\Models\products;
+use App\Models\stock;
+use App\Models\units;
+use Illuminate\Http\Request;
+
+class StockController extends Controller
+{
+    /**
+     * Display a listing of the resource.
+     */
+    public function index()
+    {
+        $products = products::all();
+        $units = units::all();
+        return view('stock.index', compact('products', 'units'));
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     */
+    public function create()
+    {
+        //
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(Request $request)
+    {
+        //
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show($id, $unitID, $from, $to)
+    {
+        $product = products::find($id);
+
+        $stocks = stock::where('productID', $id)->whereBetween('date', [$from, $to])->get();
+
+        $pre_cr = stock::where('productID', $id)->whereDate('date', '<', $from)->sum('cr');
+        $pre_db = stock::where('productID', $id)->whereDate('date', '<', $from)->sum('db');
+        $pre_balance = $pre_cr - $pre_db;
+
+        $cur_cr = stock::where('productID', $id)->sum('cr');
+        $cur_db = stock::where('productID', $id)->sum('db');
+        
+        $cur_balance = $cur_cr - $cur_db;
+
+        $unit = units::find($unitID);
+        return view('stock.details', compact('product', 'pre_balance', 'cur_balance', 'stocks', 'unit', 'from', 'to'));
+    }
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(stock $stock)
+    {
+        //
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, stock $stock)
+    {
+        //
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(stock $stock)
+    {
+        //
+    }
+}
