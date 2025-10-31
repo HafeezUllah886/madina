@@ -42,8 +42,8 @@
                                         <th class="text-center">P-Price</th>
                                         <th class="text-center">S-Price</th>
                                         <th class="text-center">WS Price</th>
-                                        <th class="text-center">RT Price</th>
-                                        <th class="text-center">GST 18%</th>
+                                      {{--   <th class="text-center">RT Price</th>
+                                        <th class="text-center">GST 18%</th> --}}
                                         <th class="text-center">Amount</th>
                                         <th class="text-center">Bonus</th>
                                         <th></th>
@@ -59,15 +59,15 @@
                                             <th></th>
                                             <th></th>
                                             <th></th>
-                                            <th></th>
-                                            <th class="text-end" id="totalGst">0.00</th>
+                                            
+                                           {{--  <th class="text-end" id="totalGst">0.00</th> --}}
                                             <th class="text-end" id="totalAmount">0.00</th>
                                             <th></th>
                                         </tr>
                                     </tfoot>
                                 </table>
                             </div>
-                            <div class="col-2">
+                            <div class="col-3">
                                 <div class="form-group">
                                     <label for="comp">Purchase Inv No.</label>
                                     <input type="text" name="inv" id="inv" class="form-control">
@@ -91,18 +91,18 @@
                                     <input type="number" name="fright1" id="fright1" oninput="updateTotal()" min="0" step="any" value="0" class="form-control">
                                 </div>
                             </div>
-                            <div class="col-2">
+                           {{--  <div class="col-2">
                                 <div class="form-group">
                                     <label for="whTax">WH Tax</label>
-                                    <div class="input-group mb-3">
-                                        <input type="number" name="whTax" id="whTax" oninput="updateTotal()" max="50" min="0" step="any" value="0" aria-describedby="basic-addon2" class="form-control">
-                                        <span class="input-group-text whTaxValue" id="basic-addon2">0</span>
+                                    <div class="input-group mb-3"> --}}
+                                        <input type="hidden" name="whTax" id="whTax" oninput="updateTotal()" max="50" min="0" step="any" value="0" aria-describedby="basic-addon2" class="form-control">
+                                    {{--     <span class="input-group-text whTaxValue" id="basic-addon2">0</span>
                                       </div>
 
-                                </div>
+                              </div> 
 
-                            </div>
-                            <div class="col-2">
+                            </div>--}}
+                            <div class="col-3">
                                 <div class="form-group">
                                     <label for="net">Net Amount</label>
                                     <input type="number" name="net" id="net" step="any" readonly value="0" class="form-control">
@@ -222,8 +222,8 @@
                         html += '<td class="no-padding"><input type="number" name="pprice[]" oninput="updateChanges(' + id + ')" readonly required step="any" value="'+product.pprice+'" min="1" class="form-control text-center no-padding" id="pprice_' + id + '"></td>';
                         html += '<td class="no-padding"><input type="number" name="price[]" required step="any" value="'+product.price+'" min="0" class="form-control text-center no-padding" id="price_' + id + '"></td>';
                         html += '<td class="no-padding"><input type="number" name="wsprice[]" required step="any" value="'+product.wsprice+'" min="1" class="form-control text-center no-padding" id="wsprice_' + id + '"></td>';
-                        html += '<td class="no-padding"><input type="number" name="tp[]" required step="any" value="'+product.tp+'" min="1" class="form-control text-center no-padding" id="tp_' + id + '"></td>';
-                        html += '<td class="no-padding"><input type="number" name="gstValue[]" readonly required step="any" value="0" class="form-control text-center no-padding" id="gstValue_' + id + '"></td>';
+                        html += '<input type="hidden" name="tp[]" required step="any" value="0" min="1" class="form-control text-center no-padding" id="tp_' + id + '">';
+                        html += '<input type="hidden" name="gstValue[]" readonly required step="any" value="0" class="form-control text-center no-padding" id="gstValue_' + id + '">';
                         html += '<td class="no-padding"><input type="number" name="amount[]" min="0.1" readonly required step="any" value="1" class="form-control text-center no-padding" id="amount_' + id + '"></td>';
                         html += '<td class="no-padding"><input type="number" name="bonus[]" min="0" required step="any" value="0" oninput="updateChanges(' + id + ')" class="form-control text-center no-padding" id="bonus_' + id + '"></td>';
                         html += '<td class="no-padding"> <span class="btn btn-sm btn-danger" onclick="deleteRow('+id+')">X</span> </td>';

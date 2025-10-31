@@ -75,8 +75,8 @@
                                                         <th scope="col" class="text-end">S-Price</th>
                                                         <th scope="col" class="text-end">WS-Price</th>
                                                         <th scope="col" class="text-end">Bonus</th>
-                                                        <th scope="col" class="text-end">RT Price</th>
-                                                        <th scope="col" class="text-end">GST 18%</th>
+                                                        {{-- <th scope="col" class="text-end">RT Price</th>
+                                                        <th scope="col" class="text-end">GST 18%</th> --}}
                                                         <th scope="col" class="text-end">Amount</th>
                                                     </tr>
                                                 </thead>
@@ -99,8 +99,8 @@
                                                         <td class="text-end p-1 m-1">{{number_format($product->price,2)}}</td>
                                                         <td class="text-end p-1 m-1">{{number_format($product->wsprice,2)}}</td>
                                                         <td class="text-end p-1 m-1">{{number_format($product->bonus)}}</td>
-                                                        <td class="text-end p-1 m-1">{{number_format($product->tp,2)}}</td>
-                                                        <td class="text-end p-1 m-1">{{number_format($product->gstValue, 2)}}</td>
+                                                        {{-- <td class="text-end p-1 m-1">{{number_format($product->tp,2)}}</td>
+                                                        <td class="text-end p-1 m-1">{{number_format($product->gstValue, 2)}}</td> --}}
                                                         <td class="text-end p-1 m-1">{{number_format($product->amount,2)}}</td>
                                                        </tr>
                                                    @endforeach
@@ -114,8 +114,8 @@
                                                         <th></th>
                                                         <th></th>
                                                         <th></th>
-                                                        <th></th>
-                                                        <th class="text-end">{{number_format($purchase->details->sum('gstValue'), 2)}}</th>
+                                                        {{-- <th></th>
+                                                        <th class="text-end">{{number_format($purchase->details->sum('gstValue'), 2)}}</th> --}}
                                                         <th class="text-end">{{number_format($purchase->details->sum('amount'), 2)}}</th>
                                                     </tr>
                                                 </tfoot>
@@ -138,16 +138,16 @@
                                             $net = $purchase->net;
                                         @endphp
                                         <table class="table">
-                                            <tr>
+                                           {{--  <tr>
                                                 <th class="text-end p-1 m-1">Tax Exclusive</th>
                                                 <th class="text-end p-1 m-1">{{number_format($te, 2)}}</th>
                                             </tr>
                                             <tr>
                                                 <th class="text-end p-1 m-1">GST {{$purchase->gst}}%</th>
                                                 <th class="text-end p-1 m-1">{{number_format($gst, 2)}}</th>
-                                            </tr>
+                                            </tr> --}}
                                             <tr>
-                                                <th class="text-end p-1 m-1">Tax Inclusive </th>
+                                                <th class="text-end p-1 m-1">Total </th>
                                                 <th class="text-end p-1 m-1">{{number_format($amount, 2)}}</th>
                                             </tr>
                                             <tr>

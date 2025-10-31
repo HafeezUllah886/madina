@@ -222,7 +222,7 @@
                                 <a href="{{ route('reportLoadsheet') }}" class="nav-link"
                                     data-key="t-basic-elements">Load Sheet</a>
                             </li>
-                            <li class="nav-item">
+                           {{--  <li class="nav-item">
                                 <a href="{{ route('reportSalesGst') }}" class="nav-link"
                                     data-key="t-basic-elements">Sales GST</a>
                             </li>
@@ -233,7 +233,7 @@
                             <li class="nav-item">
                                 <a href="{{ route('reportPurchasesGst') }}" class="nav-link"
                                     data-key="t-basic-elements">Purchases GST</a>
-                            </li>
+                            </li> --}}
                             <li class="nav-item">
                                 <a onclick="newWindow('{{ route('reportProductSummary') }}')" class="nav-link"
                                     data-key="t-basic-elements">Products Summary</a>
