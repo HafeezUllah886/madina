@@ -15,11 +15,11 @@
                             <!--end card-header-->
                         </div><!--end col-->
                         <div class="col-lg-12 ">
-                            <div class="row">
+                           {{--  <div class="row">
                                 <div class="col-4"></div>
                                 <div class="col-4 text-center"><h2>SALES TAX INVOICE</h2></div>
-                            </div>
-                            <div class="card-body p-4">
+                            </div> --}}
+                            <div class="card-body p-4 pb-1">
                                 <div class="row g-3">
                                     <div class="col-2">
                                         <p class="text-muted mb-2 text-uppercase fw-semibold">Inv #</p>
@@ -51,7 +51,7 @@
                             <!--end card-body-->
                         </div><!--end col-->
                         <div class="col-lg-12">
-                            <div class="card-body p-4">
+                            <div class="card-body p-4 pt-1">
                                 <div class="table-responsive">
                                     <table class="table table-borderless text-center table-nowrap align-middle mb-0">
                                         <thead>
@@ -108,13 +108,13 @@
                                                 $due = $sale->net - $sale->payments->sum('amount');
                                                 $paid = $sale->payments->sum('amount');
                                             @endphp
-                                            <tr class="border-1 border-dark">
-                                                <th colspan="4" class="text-end">Total</th>
-                                                <th class="text-end">{{number_format($totalQty)}}</th>
-                                                <th class="text-end">{{number_format($totalBonus)}}</th>
+                                            <tr class="border-1 border-dark p-1">
+                                                <th colspan="4" class="text-end p-1">Total</th>
+                                                <th class="text-end p-1">{{number_format($totalQty)}}</th>
+                                                <th class="text-end p-1">{{number_format($totalBonus)}}</th>
                                                 <th></th>
-                                                <th class="text-end">{{number_format($discount,2)}}</th>
-                                                <th class="text-end">{{number_format($totalTi,2)}}</th>
+                                                <th class="text-end p-1">{{number_format($discount,2)}}</th>
+                                                <th class="text-end p-1">{{number_format($totalTi,2)}}</th>
                                                {{--  <th class="text-end"></th>
                                                 <th class="text-end">{{number_format($totalGstVal,2)}}</th> --}}
                                             </tr>
